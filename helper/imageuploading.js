@@ -1,9 +1,9 @@
 const axios = require("axios");
-const User = require("../models/user");
+const User = require("../models/User");
 const FormData = require("form-data");
 const fs = require("fs");
 
-const imageUploading = async (imagePath, proofOfAddress, proofOfIdentity, passportsizephoto, proofOfIdentityforcompany, certification, moa, aoa, boardResolution, userId) => {
+const imageUploading = async ({ imagePath, proofOfAddress, proofOfIdentity, passportsizephoto, proofOfIdentityforcompany, certification, moa, aoa, boardResolution, userId }) => {
   const pinataAPIKey = process.env.PINATA_API_KEY;
   const pinataSecretKey = process.env.PINATA_API_SECRET;
   const url = `https://api.pinata.cloud/pinning/pinFileToIPFS`;

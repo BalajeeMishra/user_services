@@ -1,9 +1,10 @@
 const { validationResult } = require("express-validator");
-const User = require("../models/user");
+const User = require("../models/User");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const JWT_ACC_ACTIVATE = "usingtokenforauthentication";
 const AppError = require("../controlError/AppError");
+const imageUploading = require("../helper/imageuploading");
 const customStatuandError = require("../controlError/httpStatusandError");
 const error = customStatuandError();
 
@@ -138,6 +139,85 @@ const resetPassword = async (req, res) => {
   }
 };
 
+const newUserForKyc = async (_, res) => {
+  const newuserforverification = await User.find({ $and: [{ "userKyc.proofOfAddress.url": { $ne: null } }, { "userKyc.proofOfIdentity.url": { $ne: null } }, { verificationdone: false }] });
+  return res.status(200).json({ newuserforverification });
+};
+
+const newCompanyForKyc = async (_, res) => {
+  const newuserforverification = await User.find({ $and: [{ "companyKyc.proofOfIdentity.url": { $ne: null } }, { "companyKyc.certification.url": { $ne: null } }, { verificationdone: false }] });
+  return res.status(200).json({ newuserforverification });
+};
+
+const kycForUserProcess = async (req, res) => {
+  const { proofOfAddress, proofOfIdentity, passportsizephoto } = req.query;
+  const imageResponse = await imageUploading({ imagePath: req.file.destination + "/" + req.file.filename, proofOfAddress, proofOfIdentity, passportsizephoto, userId: req.userId });
+  if (imageResponse) {
+    return res.status(200).json({ message: "Image Uploaded Successfully" });
+  }
+};
+
+const kycForCompanyProcess = async (req, res) => {
+  const { proofOfIdentityforcompany, certification, moa, aoa, boardResolution } = req.query;
+  const imageResponse = await imageUploading({ imagePath: req.file.destination + "/" + req.file.filename, proofOfIdentityforcompany, certification, moa, aoa, boardResolution, userId: req.userId });
+  if (imageResponse) {
+    return res.status(200).json({ message: "Image Uploaded Successfully" });
+  }
+};
+
+const verifykyc = async (req, res) => {
+  const { id, proofOfAddress, proofOfIdentityforuser, userVerified, proofOfIdentityforCompany, certification, moa, aoa, boardResolution, companyVerified } = req.query;
+  const user = await User.findById(id);
+  if (proofOfAddress) {
+    user.userKyc.proofOfAddress.status = true;
+    await user.save();
+    return res.status(200).json({ message: "Proof of Address verified" });
+  } else if (proofOfIdentityforuser) {
+    user.userKyc.proofOfIdentity.status = true;
+    await user.save();
+    return res.status(200).json({ message: "Proof of identity verified" });
+  } else if (passportsizephoto) {
+    user.userKyc.passportsizephoto.status = true;
+    await user.save();
+    return res.status(200).json({ message: "Profile pic verified" });
+  } else if (userVerified) {
+    if (user.userKyc.proofOfAddress.status && user.userKyc.proofOfIdentity.status) {
+      user.userKyc.verificationdone = true;
+      await user.save();
+      return res.status(200).json({ message: "User verification done" });
+    }
+    return res.status(404).json({ message: "Something went wrong, Please try again" });
+  } else if (proofOfIdentityforCompany) {
+    user.companyKyc.proofOfIdentity.status = true;
+    await user.save();
+    return res.status(200).json({ message: "Proof of identity verified " });
+  } else if (certification) {
+    user.companyKyc.certification.status = true;
+    await user.save();
+    return res.status(200).json({ message: "Certification verified" });
+  } else if (moa) {
+    user.companyKyc.moa.status = true;
+    await user.save();
+    return res.status(200).json({ message: "Memorandum of Association Verified" });
+  } else if (aoa) {
+    user.companyKyc.aoa.status = true;
+    await user.save();
+    return res.status(200).json({ message: "Articles of Association Verified" });
+  } else if (boardResolution) {
+    user.companyKyc.boardResolution.status = true;
+    await user.save();
+    return res.status(200).json({ message: "Board Resolution or Letter of Authorization verified" });
+  } else if (companyVerified) {
+    if (user.companyKyc.proofOfIdentity.status && user.companyKyc.certification.status && user.companyKyc.moa) {
+      user.companyKyc.verificationdone = true;
+      await user.save();
+      return res.status(200).json({ message: "Company verification done" });
+    }
+    return res.status(404).json({ message: "Something went wrong, Please try again" });
+  }
+  return res.status(500).json({ message: "Server not responding.try again!" });
+};
+
 module.exports = {
   registerUser,
   loginUser,
@@ -145,5 +225,10 @@ module.exports = {
   currentUser,
   checkingUserWithEmail,
   addPicture,
-  resetPassword
+  resetPassword,
+  newUserForKyc,
+  kycForUserProcess,
+  verifykyc,
+  kycForCompanyProcess,
+  newCompanyForKyc
 };
