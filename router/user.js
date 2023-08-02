@@ -20,7 +20,7 @@ router.get("/currentUser", [verifyToken], wrapAsync(currentUser));
 router.post("/emailCheck", wrapAsync(checkingUserWithEmail));
 
 // update user model with new profile picture
-router.post("/addPicture", [verifyToken], wrapAsync(addPicture));
+router.post("/addPicture", [verifyToken], upload.single("image"), wrapAsync(addPicture));
 
 // route handling forget passwordd
 router.post("/resetPassword", check("emailId", "Please include a valid email").isEmail(), check("password", "Please enter a password with 6 or more characters").isLength({ min: 6 }), wrapAsync(resetPassword));

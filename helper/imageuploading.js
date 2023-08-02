@@ -1,24 +1,7 @@
-const axios = require("axios");
 const User = require("../models/User");
-const FormData = require("form-data");
-const fs = require("fs");
-
+const imageUploadingHelper = require("./imageuploadinghelper");
 const imageUploading = async ({ imagePath, proofOfAddress, proofOfIdentity, passportsizephoto, proofOfIdentityforcompany, certification, moa, aoa, boardResolution, userId }) => {
-  const pinataAPIKey = process.env.PINATA_API_KEY;
-  const pinataSecretKey = process.env.PINATA_API_SECRET;
-  const url = `https://api.pinata.cloud/pinning/pinFileToIPFS`;
-  //we gather a local file for this example, but any valid readStream source will work here.
-  let data = new FormData();
-  data.append("file", fs.createReadStream(imagePath));
-  const response = await axios.post(url, data, {
-    maxContentLength: "Infinity", //this is needed to prevent axios from erroring out with large files
-    headers: {
-      "Content-Type": `multipart/form-data; boundary=${data._boundary}`,
-      pinata_api_key: pinataAPIKey,
-      pinata_secret_api_key: pinataSecretKey
-    }
-  });
-  const imgHash = `https://gateway.pinata.cloud/ipfs/${response.data.IpfsHash}`;
+  const imgHash = await imageUploadingHelper(imagePath);
   if (proofOfAddress) {
     const userUpdateResponse = await User.findByIdAndUpdate(userId, { $set: { "userKyc.proofOfAddress.url": imgHash } }, { new: true });
     return userUpdateResponse;

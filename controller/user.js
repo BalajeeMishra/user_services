@@ -2,9 +2,11 @@ const { validationResult } = require("express-validator");
 const User = require("../models/User");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const fs = require("fs");
 const JWT_ACC_ACTIVATE = "usingtokenforauthentication";
 const AppError = require("../controlError/AppError");
 const imageUploading = require("../helper/imageuploading");
+const imageUploadingHelper = require("../helper/imageuploadinghelper");
 const customStatuandError = require("../controlError/httpStatusandError");
 const error = customStatuandError();
 
@@ -115,7 +117,8 @@ const checkingUserWithEmail = async (req, res) => {
 const addPicture = async (req, res) => {
   try {
     const { userId } = req;
-    const { profilePic } = req.body;
+    const imagePath = req.file.destination + "/" + req.file.filename;
+    const profilePic = await imageUploadingHelper(imagePath);
     await User.findByIdAndUpdate(userId, { profilePicture: profilePic }, { new: true });
     return res.status(200).json({ message: "Profile Picture added" });
   } catch (error) {
@@ -141,27 +144,51 @@ const resetPassword = async (req, res) => {
 
 const newUserForKyc = async (_, res) => {
   const newuserforverification = await User.find({ $and: [{ "userKyc.proofOfAddress.url": { $ne: null } }, { "userKyc.proofOfIdentity.url": { $ne: null } }, { verificationdone: false }] });
+  if (!newuserforverification) {
+    throw new AppError("No new user applied for kyc", 404);
+  }
   return res.status(200).json({ newuserforverification });
 };
 
 const newCompanyForKyc = async (_, res) => {
   const newuserforverification = await User.find({ $and: [{ "companyKyc.proofOfIdentity.url": { $ne: null } }, { "companyKyc.certification.url": { $ne: null } }, { verificationdone: false }] });
+  if (!newuserforverification) {
+    throw new AppError("No new company applied for kyc", 404);
+  }
   return res.status(200).json({ newuserforverification });
 };
 
 const kycForUserProcess = async (req, res) => {
   const { proofOfAddress, proofOfIdentity, passportsizephoto } = req.query;
-  const imageResponse = await imageUploading({ imagePath: req.file.destination + "/" + req.file.filename, proofOfAddress, proofOfIdentity, passportsizephoto, userId: req.userId });
+  const imagePath = req.file.destination + "/" + req.file.filename;
+  const imageResponse = await imageUploading({ imagePath, proofOfAddress, proofOfIdentity, passportsizephoto, userId: req.userId });
   if (imageResponse) {
-    return res.status(200).json({ message: "Image Uploaded Successfully" });
+    fs.unlink(imagePath, (err) => {
+      if (err) {
+      } else {
+      }
+    });
+    return res.status(200).json({ message: "Document Uploaded Successfully" });
   }
 };
 
 const kycForCompanyProcess = async (req, res) => {
-  const { proofOfIdentityforcompany, certification, moa, aoa, boardResolution } = req.query;
-  const imageResponse = await imageUploading({ imagePath: req.file.destination + "/" + req.file.filename, proofOfIdentityforcompany, certification, moa, aoa, boardResolution, userId: req.userId });
-  if (imageResponse) {
-    return res.status(200).json({ message: "Image Uploaded Successfully" });
+  try {
+    const { proofOfIdentityforcompany, certification, moa, aoa, boardResolution } = req.query;
+    const imagePath = req.file.destination + "/" + req.file.filename;
+    const imageResponse = await imageUploading({ imagePath, proofOfIdentityforcompany, certification, moa, aoa, boardResolution, userId: req.userId });
+    if (imageResponse) {
+      fs.unlink(imagePath, (err) => {
+        if (err) {
+        } else {
+        }
+      });
+      return res.status(200).json({ message: "Document Uploaded Successfully" });
+    } else {
+      throw new AppError("Something went wrong. Please try again!");
+    }
+  } catch (e) {
+    throw new AppError(error["500"], 500);
   }
 };
 
