@@ -28,10 +28,7 @@ const registerUser = async (req, res) => {
       fullName,
       companyName,
       selectCompany,
-      blockchainAdd: blkchn,
-      BNZBalance,
       emailId,
-      password,
       mobileNo,
       country,
       companysize
