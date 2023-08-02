@@ -159,16 +159,22 @@ const newCompanyForKyc = async (_, res) => {
 };
 
 const kycForUserProcess = async (req, res) => {
-  const { proofOfAddress, proofOfIdentity, passportsizephoto } = req.query;
-  const imagePath = req.file.destination + "/" + req.file.filename;
-  const imageResponse = await imageUploading({ imagePath, proofOfAddress, proofOfIdentity, passportsizephoto, userId: req.userId });
-  if (imageResponse) {
-    fs.unlink(imagePath, (err) => {
-      if (err) {
-      } else {
-      }
-    });
-    return res.status(200).json({ message: "Document Uploaded Successfully" });
+  try {
+    const { proofOfAddress, proofOfIdentity, passportsizephoto } = req.query;
+    const imagePath = req.file.destination + "/" + req.file.filename;
+    const imageResponse = await imageUploading({ imagePath, proofOfAddress, proofOfIdentity, passportsizephoto, userId: req.userId });
+    if (imageResponse) {
+      fs.unlink(imagePath, (err) => {
+        if (err) {
+        } else {
+        }
+      });
+      return res.status(200).json({ message: "Document Uploaded Successfully" });
+    } else {
+      throw new AppError("Something went wrong. Please try again!");
+    }
+  } catch (e) {
+    throw new AppError(error["500"], 500);
   }
 };
 
@@ -235,14 +241,14 @@ const verifykyc = async (req, res) => {
     await user.save();
     return res.status(200).json({ message: "Board Resolution or Letter of Authorization verified" });
   } else if (companyVerified) {
-    if (user.companyKyc.proofOfIdentity.status && user.companyKyc.certification.status && user.companyKyc.moa) {
+    if (user.companyKyc.proofOfIdentity.status && user.companyKyc.certification.status) {
       user.companyKyc.verificationdone = true;
       await user.save();
       return res.status(200).json({ message: "Company verification done" });
     }
     return res.status(404).json({ message: "Something went wrong, Please try again" });
   }
-  return res.status(500).json({ message: "Server not responding.try again!" });
+  throw new AppError("Something went wrong. Please try again!");
 };
 
 module.exports = {

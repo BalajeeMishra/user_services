@@ -1,5 +1,6 @@
 const User = require("../models/User");
 const imageUploadingHelper = require("./imageuploadinghelper");
+const AppError = require("../controlError/AppError");
 const imageUploading = async ({ imagePath, proofOfAddress, proofOfIdentity, passportsizephoto, proofOfIdentityforcompany, certification, moa, aoa, boardResolution, userId }) => {
   const imgHash = await imageUploadingHelper(imagePath);
   if (proofOfAddress) {
@@ -27,7 +28,7 @@ const imageUploading = async ({ imagePath, proofOfAddress, proofOfIdentity, pass
     const userUpdateResponse = await User.findByIdAndUpdate(userId, { $set: { "companyKyc.boardResolution.url": imgHash } }, { new: true });
     return userUpdateResponse;
   }
-  return;
+  throw new AppError("Something went wrong. Please try again!", 500);
 };
 
 module.exports = imageUploading;

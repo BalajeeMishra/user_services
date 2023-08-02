@@ -18,10 +18,10 @@ const UserSchema = new mongoose.Schema(
       type: String,
       unique: true
     },
-    isVerified: {
-      type: Boolean,
-      default: false
-    },
+    // isVerified: {
+    //   type: Boolean,
+    //   default: false
+    // },
     password: String,
     mobileNo: Number,
     country: String,

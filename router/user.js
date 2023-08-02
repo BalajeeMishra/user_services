@@ -25,17 +25,16 @@ router.post("/addPicture", [verifyToken], upload.single("image"), wrapAsync(addP
 // route handling forget passwordd
 router.post("/resetPassword", check("emailId", "Please include a valid email").isEmail(), check("password", "Please enter a password with 6 or more characters").isLength({ min: 6 }), wrapAsync(resetPassword));
 
-//aadhar or pain uploading route.
+//aadhar or pain uploading or say kyc for user.
 router.post("/kycforuser", [verifyToken], upload.single("image"), wrapAsync(kycForUserProcess));
+//kyc for company.
+router.post("/kycforcompany", [verifyToken], upload.single("image"), wrapAsync(kycForCompanyProcess));
 // route to find all user who has applied for verification of kyc.
 router.get("/newuserforkyc", [verifyToken], wrapAsync(newUserForKyc));
-
+// route to find all company who has applied for verification of kyc.
 router.get("/newcompanyforkyc", [verifyToken], wrapAsync(newCompanyForKyc));
 // verifykyc by aadhar and pan
 router.get("/verifykyc", [verifyToken], wrapAsync(verifykyc));
-
-router.post("/kycforcompany", [verifyToken], upload.single("image"), wrapAsync(kycForCompanyProcess));
-
 // routes for google authentication
 router.get("/googleauth", passport.authenticate("google", { scope: ["profile", "email"] }));
 
