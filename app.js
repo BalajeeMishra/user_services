@@ -13,6 +13,10 @@ app.use("/api/user", require("./router/user"));
 
 // router middleware
 
+app.use((err, req, res, next) => {
+  return res.status(err.status).json({ message: err.message });
+});
+
 app.get("/", (_, res) => {
   return res.send("API running");
 });
